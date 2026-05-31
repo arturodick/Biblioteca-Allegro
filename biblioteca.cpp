@@ -2,6 +2,8 @@
 #include <string>
 #include <conio.h>
 #include <allegro5/allegro.h> //libreria base de allegro
+#include <cstdlib> //malloc y realloc
+#include <allegro5/allegro_font.h> //libreria para escribir texto en la ventana
 
 using namespace std;
 
@@ -29,6 +31,9 @@ int main(){
         return -1;
     }
 
+    //iniciar las fuentes del texto
+    al_init_font_addon();
+
     //vamos a crear la ventana (ancho de 800, alto de 700)
     ALLEGRO_DISPLAY *ventana = al_create_display(800,700);
     if(!ventana){
@@ -36,6 +41,17 @@ int main(){
         return -1;
     }
     al_set_window_title(ventana, "BIBLIOTECA PERSONAL"); //titulo de la ventana
+
+    //fuente de texto q viene por defecto en Allegro
+    ALLEGRO_FONT *fuente_menu = al_create_builtin_font();
+
+    //Empezamos aqui con MEMORIA DINAMICA
+    //punto q manejara el inventario flexible
+    Articulo *inventario = NULL;
+    int cantidad_articulos = 0; //lleva la cuenta de los articulos q tenemos guardados
+
+    //al iniciar reservamos espacio para 0 usando malloc
+    inventario = (Articulo*) malloc (cantidad_articulos * sizeof(Articulo)); 
 
     //vamos a crear la cola de eventos, esto detecta clics, teclas, etc
     ALLEGRO_EVENT_QUEUE *cola_de_eventos = al_create_event_queue();
@@ -79,15 +95,32 @@ int main(){
         //el color en formato RGB: Rojo, Verde, Azul. los valores son de 0 a 255
         al_clear_to_color(al_map_rgb(34, 40, 49));
 
+        //hacemos q los textos se vean en la pantalla
+        //los parametros son: fuente, color rgb, posicion x, posicion y, alineacion, "texto"
+        al_draw_text(fuente_menu, al_map_rgb(255, 211, 105), 400, 50, ALLEGRO_ALIGN_CENTER, "-----BIBLIOTECA PERSONAL-----");
+
+        al_draw_text(fuente_menu, al_map_rgb(238, 238, 238), 150, 150, ALLEGRO_ALIGN_LEFT, "1.AGREGAR ARTICULO");
+        al_draw_text(fuente_menu, al_map_rgb(238, 238, 238), 150, 200, ALLEGRO_ALIGN_LEFT, "2.BUSCAR ARTICULO");
+        al_draw_text(fuente_menu, al_map_rgb(238, 238, 238), 150, 250, ALLEGRO_ALIGN_LEFT, "3.MOSTRAR TODO");
+        al_draw_text(fuente_menu, al_map_rgb(238, 238, 238), 150, 300, ALLEGRO_ALIGN_LEFT, "4.MODIFICAR ARTICULO");
+        al_draw_text(fuente_menu, al_map_rgb(238, 238, 238), 150, 350, ALLEGRO_ALIGN_LEFT, "5.ELIMINAR ARTICULO");
+        al_draw_text(fuente_menu, al_map_rgb(238, 238, 238), 150, 400, ALLEGRO_ALIGN_LEFT, "6.GUARDAR Y SALIR");
+
+        al_draw_text(fuente_menu, al_map_rgb(255, 211, 105), 400, 520, ALLEGRO_ALIGN_CENTER, "SELECCIONA UNA OPCION: ");
+
         //mostrar en la pantalla todo lo pintado
         al_flip_display();
         }
     }
 
+    //hay que liberar la memoria dinamica al cerrar 
+    free(inventario);
+
     //vamos a limpiar todo, al cerrar borramos lo creado para limpiar la memoria
     al_destroy_event_queue(cola_de_eventos);
     al_destroy_display(ventana);
-    al_destroy_timer(reloj);
+    al_destroy_timer(reloj); 
+    al_destroy_font(fuente_menu); //para la fuente del texto
 
     cout<<"VENTANA CERRADA"<<endl;
 
