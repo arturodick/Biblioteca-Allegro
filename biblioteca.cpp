@@ -1,17 +1,13 @@
 /*
 ============================================================
  SISTEMA DE GESTION DE BIBLIOTECA PERSONAL 
- Estructura analítica inicial y prototipado.
 ============================================================
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-// Enumeraciones y estructuras
-typedef enum {
-    DISPONIBLE,
-    PRESTADO
-} EstadoObjeto;
+typedef enum { DISPONIBLE, PRESTADO } EstadoObjeto;
 
 typedef struct {
     int    id;
@@ -22,21 +18,54 @@ typedef struct {
     EstadoObjeto estado;
 } Articulo;
 
-// Variables globales auxiliares
-Articulo *inventario = NULL;
-int totalArticulos = 0;
+void agregarArticulo(Articulo **inv, int *total) {
+    Articulo nuevo;
+    nuevo.id = *total + 1; //🐸 Asignacion ID lineal basica 
+    
+    printf("Titulo: ");
+    fgets(nuevo.titulo, 100, stdin);
+    nuevo.titulo[strcspn(nuevo.titulo, "\n")] = '\0';
+    
+    printf("Anio: ");
+    scanf("%d", &nuevo.anio);
+    getchar(); //🐸 Limpieza basica del buffer
+    
+    nuevo.estado = DISPONIBLE;
 
-// Prototipos de funciones 
-void cargarArchivoBinario(Articulo **inv, int *total);
-void guardarArchivoBinario(Articulo *inv, int total);
-void agregarArticulo(Articulo **inv, int *total);
-void buscarArticulo(Articulo *inv, int total);
-void mostrarTodos(Articulo *inv, int total);
-void modificarArticulo(Articulo *inv, int total);
-void eliminarArticulo(Articulo **inv, int *total);
+    *inv = (Articulo *)realloc(*inv, (*total + 1) * sizeof(Articulo));
+    (*inv)[*total] = nuevo;
+    (*total)++;
+}
+
+void guardarArchivoBinario(Articulo *inv, int total) {
+    FILE *fp = fopen("biblioteca.dat", "wb");
+    if (fp) {
+        fwrite(&total, sizeof(int), 1, fp);
+        fwrite(inv, sizeof(Articulo), total, fp);
+        fclose(fp);
+    }
+}
+
+void cargarArchivoBinario(Articulo **inv, int *total) {
+    FILE *fp = fopen("biblioteca.dat", "rb");
+    if (fp) {
+        fread(total, sizeof(int), 1, fp);
+        *inv = (Articulo *)malloc((*total) * sizeof(Articulo));
+        fread(*inv, sizeof(Articulo), *total, fp);
+        fclose(fp);
+    }
+}
 
 int main(void) {
-    // Estructura para pruebas de compilacion 
-    printf("Sistema de Biblioteca Personal - Estructura Inicial Cargada.\n");
+    int total = 0;
+    Articulo *inv = NULL;
+    
+    cargarArchivoBinario(&inv, &total);
+    printf("Articulos cargados: %d\n", total);
+    
+    agregarArticulo(&inv, &total);
+    guardarArchivoBinario(inv, total);
+    
+    free(inv);
     return 0;
 }
