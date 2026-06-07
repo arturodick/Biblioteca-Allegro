@@ -5,67 +5,59 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <allegro5/allegro.h>
+#include <allegro5/allegro_primitives.h>
 
-typedef enum { DISPONIBLE, PRESTADO } EstadoObjeto;
+#define ANCHO_VENTANA  900
+#define ALTO_VENTANA   600
+#define COL_FONDO      al_map_rgb(34, 40, 49)
 
-typedef struct {
-    int    id;
-    char   titulo[100];
-    char   autor[100];
-    int    anio;
-    char   genero[50];
-    EstadoObjeto estado;
-} Articulo;
+/* Variables Globales de Control de Entorno */
+ALLEGRO_DISPLAY     *display     = NULL;
+ALLEGRO_EVENT_QUEUE *event_queue = NULL;
 
-void agregarArticulo(Articulo **inv, int *total) {
-    Articulo nuevo;
-    nuevo.id = *total + 1; //🐸 Asignacion ID lineal basica 
-    
-    printf("Titulo: ");
-    fgets(nuevo.titulo, 100, stdin);
-    nuevo.titulo[strcspn(nuevo.titulo, "\n")] = '\0';
-    
-    printf("Anio: ");
-    scanf("%d", &nuevo.anio);
-    getchar(); //🐸 Limpieza basica del buffer
-    
-    nuevo.estado = DISPONIBLE;
+int iniciarAllegro(void) {
+    if (!al_init()) return 0;
+    if (!al_install_keyboard()) return 0;
+    if (!al_init_primitives_addon()) return 0;
 
-    *inv = (Articulo *)realloc(*inv, (*total + 1) * sizeof(Articulo));
-    (*inv)[*total] = nuevo;
-    (*total)++;
-}
+    al_set_new_display_flags(ALLEGRO_WINDOWED);
+    display = al_create_display(ANCHO_VENTANA, ALTO_VENTANA);
+    if (!display) return 0;
 
-void guardarArchivoBinario(Articulo *inv, int total) {
-    FILE *fp = fopen("biblioteca.dat", "wb");
-    if (fp) {
-        fwrite(&total, sizeof(int), 1, fp);
-        fwrite(inv, sizeof(Articulo), total, fp);
-        fclose(fp);
-    }
-}
+    event_queue = al_create_event_queue();
+    if (!event_queue) return 0;
 
-void cargarArchivoBinario(Articulo **inv, int *total) {
-    FILE *fp = fopen("biblioteca.dat", "rb");
-    if (fp) {
-        fread(total, sizeof(int), 1, fp);
-        *inv = (Articulo *)malloc((*total) * sizeof(Articulo));
-        fread(*inv, sizeof(Articulo), *total, fp);
-        fclose(fp);
-    }
+    al_register_event_source(event_queue, al_get_keyboard_event_source());
+    al_register_event_source(event_queue, al_get_display_event_source(display));
+
+    return 1;
 }
 
 int main(void) {
-    int total = 0;
-    Articulo *inv = NULL;
-    
-    cargarArchivoBinario(&inv, &total);
-    printf("Articulos cargados: %d\n", total);
-    
-    agregarArticulo(&inv, &total);
-    guardarArchivoBinario(inv, total);
-    
-    free(inv);
+    if (!iniciarAllegro()) {
+        fprintf(stderr, "Error al inicializar la interfaz gráfica.\n");
+        return -1;
+    }
+
+    int ejecucion = 1;
+    ALLEGRO_EVENT ev;
+
+    while (ejecucion) {
+        al_clear_to_color(COL_FONDO);
+        al_flip_display();
+
+        al_wait_for_event(event_queue, &ev);
+        if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
+            if (ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
+                ejecucion = 0;
+            }
+        } else if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
+            ejecucion = 0;
+        }
+    }
+
+    al_destroy_event_queue(event_queue);
+    al_destroy_display(display);
     return 0;
 }
